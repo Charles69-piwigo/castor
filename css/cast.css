@@ -34,7 +34,7 @@
   height: 40px;
   background-repeat: no-repeat;
   background-size: contain;
-  background-image: url('../imagefiles/play.png');
+  background-image: url('../images/play.png');
 }
 
 #castor-video-btn-pause {
@@ -43,12 +43,7 @@
   height: 40px;
   background-repeat: no-repeat;
   background-size: contain;
-  background-image: url('../imagefiles/pause.png');
-}
-
-.castor-remote-bar-video:has(.bmd-form-group),
-.castor-remote-bar-video:has(.bmd-form-group) > .bmd-form-group {
-  width: 100%;
+  background-image: url('../images/pause.png');
 }
 
 /* Audio bar */
@@ -64,7 +59,7 @@
   display: block;
   background-repeat: no-repeat;
   background-size: contain;
-  background-image: url('../imagefiles/audio_on.png');
+  background-image: url('../images/audio_on.png');
 }
 
 #castor-audio-btn-off {
@@ -75,20 +70,11 @@
   display: none;
   background-repeat: no-repeat;
   background-size: contain;
-  background-image: url('../imagefiles/audio_off.png');
+  background-image: url('../images/audio_off.png');
 }
 
 #castor-remote-bar-audio input[id="castor-audio-bar"] {
   transform: scale(1,2);
-}
-
-/* Fix audio bar for Bootstrap Theme */
-.castor-remote-bar-audio:has(.bmd-form-group) {
-  width: 100%;
-}
-
-.castor-remote-bar-audio:has(.bmd-form-group) > .bmd-form-group {
-  width: 200px;
 }
 
 #castor-video-bar,
@@ -122,4 +108,15 @@
   border-radius: 5px;
   z-index: 1000;
   font-size: 14px;
+}
+
+/* Fix audio & video bars for Bootstrap Material Theme */
+.castor-remote-bar-video:has(.bmd-form-group),
+.castor-remote-bar-video:has(.bmd-form-group) > .bmd-form-group,
+.castor-remote-bar-audio:has(.bmd-form-group) {
+  width: 100%;
+}
+
+.castor-remote-bar-audio:has(.bmd-form-group) > .bmd-form-group {
+  width: 200px;
 }

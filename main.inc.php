@@ -5,7 +5,7 @@ Version: 3.1
 Description: Castor - diffuser vos photos et vidéos sur une télé android ou via un chromecast
 Plugin URI: 
 Author: Charles69
-Author URI:
+Author URI: 
 */
 
 
@@ -13,9 +13,10 @@ Author URI:
  // historique des versions
  /*
 
-  version 3.1 - 24/03/2025
-  changement numérotation des versions
+  version 3.1 - 25/03/2025 (diffusé)
+  changement numérotation des versions - nettoyage du code
   ajouté le pilotage des vidéos Play on/off - avancement - Son on/off - Volume 
+  css modifié prise en compte du thème bootstrap-darkroom & modus
 
   version 2.0.3 - 12/03/2025
   modifié imagemagick - correction calcul du redimensionnement avec respect du ratio
