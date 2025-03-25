@@ -1,0 +1,125 @@
+#castor-remote {
+  position: relative;
+  max-width: 792px;
+  width: 100%;
+  padding: 15px;
+  box-sizing: border-box;
+  margin: 15px auto 0;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 10px;
+}
+
+.castor-remote-title {
+  font-size: 1rem;
+  font-weight: 400;
+  color: #fff;
+}
+
+.castor-remote-line {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 10px;
+}
+
+/* Video bar */
+#castor-remote-bar-video input[id="castor-video-bar"] {
+  transform: scale(1,2);
+}
+
+#castor-video-btn-play {
+  width: 65px;
+  min-width: 65px;
+  height: 40px;
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-image: url('../imagefiles/play.png');
+}
+
+#castor-video-btn-pause {
+  width: 65px;
+  min-width: 65px;
+  height: 40px;
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-image: url('../imagefiles/pause.png');
+}
+
+.castor-remote-bar-video:has(.bmd-form-group),
+.castor-remote-bar-video:has(.bmd-form-group) > .bmd-form-group {
+  width: 100%;
+}
+
+/* Audio bar */
+.castor-remote-bar-audio {
+  width: 200px;
+}
+ 
+#castor-audio-btn-on {
+  width: 35px;
+  min-width: 35px;
+  margin: 0 15px;
+  height: 32px;
+  display: block;
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-image: url('../imagefiles/audio_on.png');
+}
+
+#castor-audio-btn-off {
+  width: 35px;
+  min-width: 35px;
+  margin: 0 15px;
+  height: 32px;
+  display: none;
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-image: url('../imagefiles/audio_off.png');
+}
+
+#castor-remote-bar-audio input[id="castor-audio-bar"] {
+  transform: scale(1,2);
+}
+
+/* Fix audio bar for Bootstrap Theme */
+.castor-remote-bar-audio:has(.bmd-form-group) {
+  width: 100%;
+}
+
+.castor-remote-bar-audio:has(.bmd-form-group) > .bmd-form-group {
+  width: 200px;
+}
+
+#castor-video-bar,
+#castor-audio-bar {
+  width: 100%;
+  transform: scale(1,2);
+}
+
+/* Button Cast */
+#castor-btn-cast {
+  cursor: pointer;
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+#castor-btn-cast svg path {
+  fill: currentColor;
+}
+
+/* Alert Cast */
+.castor-alert {
+  position: fixed; 
+  display: none; 
+  top: 40px; 
+  left: 50%; 
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8); 
+  color: #fff; 
+  padding: 10px 20px; 
+  border-radius: 5px;
+  z-index: 1000;
+  font-size: 14px;
+}
