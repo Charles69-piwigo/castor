@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: castor
-Version: 3.1
+Version: 3.2
 Description: Castor - diffuser vos photos et vidéos sur une télé android ou via un chromecast
 Plugin URI: 
 Author: Charles69
@@ -12,6 +12,9 @@ Author URI:
  // ============  VERSIONS =========================================================
  // historique des versions
  /*
+  version 3.2 - 12/10/2025
+  remplacement des fonctions imagemagick par les fonctions natives piwigo derivatives
+
 
   version 3.1 - 25/03/2025 (diffusé)
   changement numérotation des versions - nettoyage du code
@@ -147,25 +150,15 @@ function calc_url() {
     //if (substr($url_original,-3) !== 'mp4') {    // ce n'est pas une vidéo
     if ($mime_type !== 'video/mp4') {    // ce n'est pas une vidéo
 
-            $url_reduit = construire_url_reduit($url_picture2) ;   // url local de la photo réduite
-            //echo '  url réduit=  ',$url_reduit ;
-            if (file_exists($url_reduit)) {  
-                //echo "Le fichier réduit local existe." , $chemin_reduit; // on ne fait rien
-            } else {
-                //echo "Le fichier réduit local n'existe pas."; // on le crée
-                $url_local = generer_jpeg_reduit($url_picture, $url_reduit, 1224, 918) ; // imagemagick redimensionnement en -xl Très Grand
-                //echo '  url créée= ', $url_local ;
-            }
-
-            $url_reduit = substr($url_reduit,2) ;     // url locale , on enlève ./  
-            //echo "reduit reduit= " , $url_reduit ;
-            $url_local = $url_base . $url_reduit ;    // url https de la photo réduite 
-            //echo 'url locale= ', $url_local ;
-
+      $url_local = make_derivative_xl($url_original);
+      $url_local = $url_base . $url_local ;
+      //echo 'url_local= ' , $url_local ;
             // Assigner à Smarty
             //$url_original = json_encode($url_original);
             $template->assign('IMG_URL', $url_local); // Assignation dans le template
             $template->assign('MIME_TYPE', $mime_type);  // assignation dans le template
+
+      
     } else {
             // CAS DES VIDEOS - on passe la photo de pwg_representative et le plugin JS VIDEO fait le job !!      
             // Assigner à Smarty
@@ -176,70 +169,42 @@ function calc_url() {
     }      
   }
 
-//---------------------------------------------------------------------------------
-// Création du nom du chemin attendu du jpg réduit - exemple.jpg --> exemple-xl.jpg
-function construire_url_reduit($url_pict) {
-  // Insérer '_data/i/' entre $url_base et $url_picture
-  $url_local = './_data/i/' . $url_pict ; // pas de https pour imagick
-  // Remplacer 'exemple.jpg' par 'exemple-xl.jpg'
- // $url_locale = preg_replace('/(.*\/)([^\/]+)\.jpg$/i', '$1$2-xl.jpg', $url_locale);
-  $url_local = preg_replace('/^(.*\/)?([^\/]+?)\.jpe?g$/i', '$1$2-xl.jpg', $url_local);   /// ici on définit le suffixe du jpg
-  return $url_local;
+//------------------------------------------------------------
+function make_derivative_xl($url_original)
+{
+    include_once(PHPWG_ROOT_PATH . 'include/derivative.inc.php');
+
+    // Convertit une URL absolue en chemin relatif (format utilisé par Piwigo)
+    if (preg_match('#^https?://#', $url_original)) {
+        $root = get_absolute_root_url();
+        $url_original = str_replace($root, '', $url_original);
+        $url_original = './' . ltrim($url_original, '/');
+    }
+
+    // Cherche l'image dans la table piwigo_images
+    $query = '
+        SELECT *
+        FROM ' . IMAGES_TABLE . '
+        WHERE path = "' . pwg_db_real_escape_string($url_original) . '"
+        LIMIT 1;';
+    $row = pwg_db_fetch_assoc(pwg_query($query));
+
+    if (empty($row)) {
+        trigger_error("make_derivative_xl: image non trouvée ($url_original)", E_USER_WARNING);
+        return null;
+    }
+
+    // Crée l’objet source
+    $src_image = new SrcImage($row);
+
+    // Crée le derivative XL et retourne son URL
+    $params = ImageStdParams::get_by_type('xlarge');
+    $derivative = new DerivativeImage($params, $src_image);
+
+    return $derivative->get_url();
 }
 
-//-------------------------------------------------------------------------------
-//Création du jpg réduit à l'endroit et avec le nom attendu
-function generer_jpeg_reduit($chemin_source, $chemin_destination, $larg_cible, $haut_cible) {
 
-  try {
-
-      // Charger l'image avec Imagick
-      $image = new Imagick($chemin_source);
-      if (!$image) { 
-        echo "Imagick non dispo";
-      }
-
-      // Vérifier que c'est bien un JPEG
-      if ($image->getImageFormat() !== 'JPEG') {
-        //echo "pas un jpeg";
-          return false;
-      } 
-
-      // calcul des dimensions pour éviter distorsion aléatoire
-      $haut_orig = $image->getImageHeight();
-      $larg_orig = $image->getImageWidth();
-      $img_ratio = $larg_orig / $haut_orig ;
-      
-            $largeur = round(min($larg_cible,$haut_cible * $img_ratio)) ;
-            $hauteur = round(min($haut_cible,$larg_cible / $img_ratio)) ;
-
-            //echo 'larg= ' , $larg_orig , ' haut= ' , $haut_orig ;
-            //echo 'larg= ' , $largeur , ' haut= ' , $hauteur ;
-
-      // Redimensionner l'image avec une haute qualité
-      $image->resizeImage($largeur, $hauteur, Imagick::FILTER_LANCZOS, 1,true);
-
-      // Définir le format et la qualité JPEG
-      $image->setImageFormat('jpeg');
-      $image->setImageCompression(Imagick::COMPRESSION_JPEG);
-      $image->setImageCompressionQuality(95);
-
-      // Sauvegarder l'image redimensionnée
-      $image->writeImage($chemin_destination);
-
-      // Libérer la mémoire
-      $image->clear();
-      $image->destroy();
-      //echo "image créée avec succès ";
-
-      return $chemin_destination;
-
-  } catch (Exception $e) {
-      //echo "exception" ;
-      //die("Erreur Imagick : ". $e->getMessage()) ;
-      return false;
-  }
-}
 
 // ==========================================================================================
 // Création des variables JS   JSUrl et JSMime à partir des assignations
@@ -268,6 +233,9 @@ function castAddVariables()  {
 add_event_handler('loc_begin_picture', 'ajouter_videocontrol');
 
 function ajouter_videocontrol() {
+
+
+
     global $template;
     $template->set_filename('videocontrol', CAST_PATH.'template/video_control.tpl');
     $template->assign('MON_BT', $template->parse('videocontrol', true));
