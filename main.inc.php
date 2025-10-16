@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: castor
-Version: 3.2
+Version: 3.3
 Description: Castor - diffuser vos photos et vidéos sur une télé android ou via un chromecast
 Plugin URI: 
 Author: Charles69
@@ -12,7 +12,11 @@ Author URI:
  // ============  VERSIONS =========================================================
  // historique des versions
  /*
-  version 3.2 - 12/10/2025
+  
+ version 3.3 - 16/10/2025
+  déplacement du bouton de cast de la barre de menu à la barre de navigation
+ 
+ version 3.2 - 12/10/2025
   remplacement des fonctions imagemagick par les fonctions natives piwigo derivatives
 
 
@@ -79,15 +83,15 @@ function cast_add_api()
 }
 
 // =========================================================================================
-// MENU PRINCIPAL - Ajout du bouton de cast
-
+// MENU PRINCIPAL - Ajout du bouton de cast dans la barre de menu
+/*
 add_event_handler('blockmanager_register_blocks', 'register_cast_menubar_blocks');
 
 function register_cast_menubar_blocks( $menu_ref_arr )
 {
   $menu = & $menu_ref_arr[0];
   if ($menu->get_id() != 'menubar')
-    return;
+  return;
   $menu->register_block( new RegisteredBlock( 'mbCast', 'Cast', 'CAST'));
 }
 
@@ -113,8 +117,30 @@ function cast_apply($menu_ref_arr)
   //else { echo 'getblock échoué';} 
 }
 //-----------------------------------------------------------------------
+*/
 
 
+
+// Ajout du bouton cast dans la barre d'actions de l'image
+add_event_handler('loc_end_picture', 'cast_picture_toolbar');
+
+function cast_picture_toolbar()
+{
+    global $template, $user;
+    
+    $template->set_template_dir(CAST_PATH.'template/');
+    
+    // Choix du template selon le thème
+    if ($user['theme'] == 'bootstrapdefault' || $user['theme'] == 'bootstrap_darkroom') {
+        $tpl_file = 'picture_cast_Bootstrap.tpl';
+    } else {
+        $tpl_file = 'picture_cast.tpl';
+    }
+    
+    // Assigner le template au bloc d'actions
+    $template->set_filename('cast_button', $tpl_file);
+    $template->concat('PLUGIN_PICTURE_ACTIONS', $template->parse('cast_button', true));
+}
 
 //===================================================================================
 //   IDENTIFICATION PHOTO/VIDEO - Récupération de l'URL et du MIME
