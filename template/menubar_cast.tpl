@@ -1,4 +1,4 @@
-<a id="castor-btn-cast" class="nav-link" title="Lancer la diffusion" rel="nofollow" onclick="toggleCast()">
+<a id="castor-btn-cast" class="nav-link" title="Start Casting" rel="nofollow" onclick="toggleCast()">
     <dt>
         <svg width="17" height="17" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
             <g fill="none" fill-rule="evenodd">
@@ -8,6 +8,4 @@
     </dt>
 </a>
 
-<div id="castor-alert" class="castor-alert">
-    Ouvrir une photo ou une vidéo avant de caster.
-</div>
+

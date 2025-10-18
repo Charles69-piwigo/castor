@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: castor
-Version: 3.3
+Version: 3.4
 Description: Castor - diffuser vos photos et vidéos sur une télé android ou via un chromecast
 Plugin URI: 
 Author: Charles69
@@ -12,7 +12,12 @@ Author URI:
  // ============  VERSIONS =========================================================
  // historique des versions
  /*
-  
+ 
+ version 3.4 - 18/10/2025
+  une icone de lancement - arrêt du cast sur la ligne de navigation de Picture Page
+  une icone d'état et d'arrêt du cast sur la barre de menu de Category Page
+  ajouté traduction anglais
+
  version 3.3 - 16/10/2025
   déplacement du bouton de cast de la barre de menu à la barre de navigation
  
@@ -65,6 +70,8 @@ define('CAST_PATH' , PHPWG_PLUGINS_PATH . CAST_DIR . '/');
 //echo ' CAST_PATH= ' , CAST_PATH ;
 //echo ' CAST_DIR= ' , CAST_DIR ;
 
+
+
 // SCRIPT =======================================================================================
 // ajoute les scripts Google js Cast.js et css
 
@@ -83,8 +90,8 @@ function cast_add_api()
 }
 
 // =========================================================================================
-// MENU PRINCIPAL - Ajout du bouton de cast dans la barre de menu
-/*
+// MENU PRINCIPAL - Ajout du bouton d'état et d'arrêt de cast dans la barre de menu
+
 add_event_handler('blockmanager_register_blocks', 'register_cast_menubar_blocks');
 
 function register_cast_menubar_blocks( $menu_ref_arr )
@@ -108,16 +115,16 @@ function cast_apply($menu_ref_arr)
 
     $template->set_template_dir(CAST_PATH.'template/');
 		if ($user['theme'] == 'bootstrapdefault'||$user['theme'] == 'bootstrap_darkroom'){
-		  $block->template = 'menubar_cast_Bootstrap.tpl';
+		  $block->template = 'menubar_cast_etat.tpl';
           //echo 'menu boostrap' ;		
 		}else{
-		  $block->template = 'menubar_cast.tpl';
+		  $block->template = 'menubar_cast_etat.tpl';
 		}
 } 
   //else { echo 'getblock échoué';} 
 }
 //-----------------------------------------------------------------------
-*/
+
 
 
 

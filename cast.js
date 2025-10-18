@@ -1,9 +1,14 @@
 // Vérification du chargement du script js
 console.log("cast.js chargé !");
 
+const htmlLang = document.documentElement.lang; // ex: "fr" ou "en"
+console.log("langue = " ,htmlLang);
+
 var session = null;
 var btnCast = document.getElementById("castor-btn-cast"),
     iconPath = document.getElementById("castor-icon-cast");
+var btnCastEtat = document.getElementById("castor-btn-cast-etat"),
+    iconPathEtat = document.getElementById("castor-icon-cast-etat");    
 
 var btn_video = document.getElementById('castor-remote');
 //if (btn_video) { 
@@ -19,19 +24,38 @@ console.log('castState original',sessionStorage.getItem('castState'));
 document.addEventListener("DOMContentLoaded", function() { changePage() });
 
 function changePage() {
+
   console.log('changement de page')
-  
+  console.log("page en cours  ", document.body.id);
+
+  if ((document.body.id === 'theCategoryPage') && (sessionStorage.getItem('castState') === "1")) {
+     console.log("theCategoryPage - castState= 1");
+     const message = (htmlLang === "fr") ? "Arrêter la diffusion" : "Stop casting";
+    btnCastEtat.setAttribute("title", message); // Modification du title
+    btnCastEtat.style.display = "inline-block" ; // ré-affiche l'icone d'état dans la barre de menu
+    iconPathEtat.style.fill = "#003cffff"; // Met l'icône d'état bleu
+    //iconPathEtat.style.fill = "#00ff37ff"; // Met l'icône d'état bleu
+    return ;
+  }
+
+
   let storedUrl = sessionStorage.getItem("urlPrevMedia");
 
   if (sessionStorage.getItem('castState') === "1") {  
-    console.log("Session active détectée, mise à jour de l'icône.");
-    btnCast.setAttribute("title", "Arrêter la diffusion"); // Modification du title
-    iconPath.style.fill = "#007bff"; // Remet l'icône en bleu
+    console.log("Session active détectée, mise à jour de l'icône. castState=1");
+    const message = (htmlLang === "fr") ? "Arrêter la diffusion" : "Stop casting";
+    btnCast.setAttribute("title", message); // Modification du title
+    iconPath.style.fill = "#007bff"; // Met l'icône en bleu
+    btnCastEtat.style.display = "inline-block" ; // ré-affiche l'icone d'état dans la barre de menu
+    iconPathEtat.style.fill = "#003cffff"; // Met l'icône d'état bleu
+    //iconPathEtat.style.fill = "#00ff37ff"; // Met l'icône d'état bleu
   }
 
   //console.log(storedUrl,jsUrl) ;
-  if ( storedUrl === window.jsURL  || document.body.id != 'thePicturePage')  {
-      console.log("même image ou theCategoryPage");
+  
+  if ( storedUrl === window.jsURL )  {
+      console.log("même image - castState =  ",sessionStorage.getItem('castState'));
+
       return ;
 
   } else {
@@ -54,7 +78,8 @@ function changePage() {
 }
 
 // CAST  =========================================================
-  // Fonction inverseur pour lancer ou arrêter le cast *** click sur le bouton de CAST
+
+  // Fonction inverseur pour lancer ou arrêter le cast *** click sur le bouton de CAST de picture page
 
 function toggleCast() {
   'use strict';
@@ -70,12 +95,23 @@ function toggleCast() {
       // pas d'image sur la page 
       if (typeof jsUrl === "undefined" || typeof jsMime === "undefined" || !jsUrl || !jsMime) {
         console.log("toggle > Aucun média sur cette page");
-        showCastAlert(); // Affiche le message
+        //showCastAlert(); // Affiche le message
         } else {
+                   
           launchApp();    // castOn est appelé si ça réussit
         } 
     }
   }
+
+// fonction pour arrêter le cast par le bouton de la barre d'outil
+function stopCast() {
+    btnCastEtat.style.display = "none" ; // supprime l'icone d'état dans la barre de menu
+    stopApp(); /// castOff est appelé si ça réussit 
+
+}
+
+
+
 
 // ---------------------------------------------------------------------------------  
 function castOn() {  /// si launch réussi
@@ -83,8 +119,11 @@ function castOn() {  /// si launch réussi
   sessionStorage.setItem('castState', '1');
   sessionStorage.setItem("urlPrevMedia", jsUrl); // on stocke l'url
   // Met à jour le texte du bouton
-  btnCast.setAttribute("title", "Arrêter la diffusion"); // Modification du title
-  iconPath.style.fill = "#007bff"; // bleu
+
+  const message = (htmlLang === "fr") ? "Arrêter la diffusion" : "Stop casting";
+  btnCast.setAttribute("title", message); // Modification du title
+  iconPath.style.fill = "#007bff"; // met en bleu l'icone de la barre de navigation
+  //btnCastEtat.style.display = "inline-block" ; // ré-affiche l'icone d'état dans la barre de menu
   console.log('cast démarré + castState= ',sessionStorage.getItem('castState'));
 }
 
@@ -97,8 +136,10 @@ function castOff() {   /// si stopApp réeussi
   console.log('cast arrêté + castState= ',sessionStorage.getItem('castState'));
   //initializeCastApi()
   // Met à jour le texte du bouton
-  btnCast.setAttribute("title", "Démarrer la diffusion"); // Réinitialisation du title
+  const message = (htmlLang === "fr") ? "Démarrer la diffusion" : "Start casting";
+  btnCast.setAttribute("title", message); // Modification du title
   iconPath.style.fill = "#fff"; // blanc
+  btnCastEtat.style.display = "none"; // enlève l'icone d'état de la barre de menu
 }
 
 // ===============================================================
@@ -154,6 +195,13 @@ if (!session) {
       console.log(">> Erreur - Pas de session définie.");
       return;
 }
+  
+
+  btnCastEtat.style.display = "inline-block" ; // ré-affiche l'icone d'état dans la barre de menu
+  const message = (htmlLang === "fr") ? "Arrêter la diffusion" : "Stop casting";
+  btnCastEtat.setAttribute("title", message); // Modification du title
+  iconPathEtat.style.fill = "#003cffff"; // met en bleu l'icone de la barre de menu
+  
 
 if (jsMime === 'video/mp4') {    //// Cas des vidéos ************************************** VIDEO
   console.log('jsMime = ' ,jsMime) ;
@@ -377,6 +425,7 @@ function audioOn() {
 
 //****************************************************
 /// affiche un message quand on n'est pas sur une photo/vidéo, on ne peut pas lancer le cast
+/*
 function showCastAlert() {
   var alertBox = document.getElementById("castor-alert");
   if (!alertBox) return;
@@ -387,3 +436,4 @@ function showCastAlert() {
     alertBox.style.display = "none";
       }, 5000); // Cache le message après 5 secondes
 }
+*/      
