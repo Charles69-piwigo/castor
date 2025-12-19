@@ -1,9 +1,9 @@
 <?php
 /*
 Plugin Name: castor
-Version: 3.4
+Version: 3.5
 Description: Castor - diffuser vos photos et vidéos sur une télé android ou via un chromecast
-Plugin URI: 
+Plugin URI: https://piwigo.org/ext/extension_view.php?eid=1001
 Author: Charles69
 Author URI: 
 */
@@ -12,36 +12,39 @@ Author URI:
  // ============  VERSIONS =========================================================
  // historique des versions
  /*
- 
- version 3.4 - 18/10/2025
+version 3.5 - 19/12/2025
+  déplacement de la télécommande vidéo ( suite modif VideoJS ) 
+  commentaires sur console.log
+  plugin URI modifié pour mise à jour automatique 
+
+version 3.4 - 18/10/2025
   une icone de lancement - arrêt du cast sur la ligne de navigation de Picture Page
   une icone d'état et d'arrêt du cast sur la barre de menu de Category Page
   ajouté traduction anglais
 
- version 3.3 - 16/10/2025
+version 3.3 - 16/10/2025
   déplacement du bouton de cast de la barre de menu à la barre de navigation
  
- version 3.2 - 12/10/2025
+version 3.2 - 12/10/2025
   remplacement des fonctions imagemagick par les fonctions natives piwigo derivatives
 
-
-  version 3.1 - 25/03/2025 (diffusé)
+version 3.1 - 25/03/2025 (diffusé)
   changement numérotation des versions - nettoyage du code
   ajouté le pilotage des vidéos Play on/off - avancement - Son on/off - Volume 
   css modifié prise en compte du thème bootstrap-darkroom & modus
 
-  version 2.0.3 - 12/03/2025
+ version 2.0.3 - 12/03/2025
   modifié imagemagick - correction calcul du redimensionnement avec respect du ratio
   conservation des miniatures -xl  1224x918 pixels
 
-	version 2.0.2 - 10/03/2025 (diffusé)
+version 2.0.2 - 10/03/2025 (diffusé)
 	supprimé création rep dans _data/i/galleries
  
-	version 2.0.1 - 07/03/2025
+version 2.0.1 - 07/03/2025
 	modifié le calcul du mime type
 	modifié le calcul des dimensions réduites , problème reSize aléatoire
 
-	version 2.0.0 - 02/03/2025 
+version 2.0.0 - 02/03/2025 
 	gain de vitesse substantiel
 	envoi d'une version réduite de la photo au lieu de la photo originale
   
@@ -271,7 +274,7 @@ function ajouter_videocontrol() {
 
     global $template;
     $template->set_filename('videocontrol', CAST_PATH.'template/video_control.tpl');
-    $template->assign('MON_BT', $template->parse('videocontrol', true));
+    $template->assign('CAST_BT', $template->parse('videocontrol', true));
     // Enregistrement du pré-filtre pour modifier le template
     $template->set_prefilter('picture', 'addButton');
 }
@@ -279,7 +282,8 @@ function ajouter_videocontrol() {
 
 function addButton($content) {
     $search = '{$ELEMENT_CONTENT}';  // éléments Image dans picture.tpl
-    $replacement = '{$ELEMENT_CONTENT}{$MON_BT}';  // place le bouton sous l'image
+    //$replacement = '{$ELEMENT_CONTENT}{$CAST_BT}';  // place le bouton sous l'image
+    $replacement = '{$CAST_BT}{$ELEMENT_CONTENT}';  // place le bouton au dessus de l'image
     return str_replace($search, $replacement, $content);
 }
 

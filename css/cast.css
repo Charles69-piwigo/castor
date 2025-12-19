@@ -4,7 +4,7 @@
   width: 100%;
   padding: 15px;
   box-sizing: border-box;
-  margin: 15px auto 0;
+  margin: 5px auto 15px;
   background: rgba(0, 0, 0, 0.6);
   border-radius: 10px;
 }
@@ -83,12 +83,20 @@
   transform: scale(1,2);
 }
 
-/* Button Cast */
+/* Button Cast 
 #castor-btn-cast {
   cursor: pointer;
   display: flex;
   gap: 5px;
   align-items: center;
+} */
+
+/* Button Cast */
+#castor-btn-cast {
+  cursor: pointer;
+  display: block;
+  align-self: center;
+  top: 2px;
 }
 
 #castor-btn-cast svg path {
