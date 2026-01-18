@@ -1,132 +1,253 @@
+/* =============================================================================
+   CASTOR PLUGIN - Universal CSS
+   Compatible with all Piwigo themes
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   Reset & Base - Ensures consistent rendering across all themes
+   ----------------------------------------------------------------------------- */
+[id^="castor-"],
+[class^="castor-"] {
+    box-sizing: border-box;
+}
+
+/* -----------------------------------------------------------------------------
+   Picture Toolbar Button - Universal styling
+   ----------------------------------------------------------------------------- */
+.castor-action-item {
+    display: inline-block !important;
+    vertical-align: middle !important;
+    list-style: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.castor-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 5px !important;
+    cursor: pointer !important;
+    text-decoration: none !important;
+    color: inherit !important;
+    position: relative !important;
+    top: 0 !important;
+    vertical-align: middle !important;
+    padding: 4px 8px !important;
+    border-radius: 3px !important;
+    transition: opacity 0.2s ease !important;
+}
+
+.castor-btn:hover {
+    opacity: 0.8 !important;
+    text-decoration: none !important;
+}
+
+.castor-icon {
+    display: inline-block !important;
+    vertical-align: middle !important;
+    flex-shrink: 0 !important;
+}
+
+/* Default icon color - will be overridden by JavaScript for cast state */
+#castor-icon-cast,
+#castor-icon-cast-etat {
+    fill: #fff;  /* White by default - no !important to allow JS override */
+    transition: fill 0.2s ease;
+}
+
+/* -----------------------------------------------------------------------------
+   Bootstrap Darkroom theme - Fix vertical alignment
+   ----------------------------------------------------------------------------- */
+.theme-bootstrap_darkroom .castor-action-item,
+.theme-bootstrapdefault .castor-action-item {
+    display: flex !important;
+    align-items: center !important;
+}
+
+.theme-bootstrap_darkroom .castor-btn,
+.theme-bootstrapdefault .castor-btn {
+    padding: 0 !important;
+    margin-right: 4px !important;
+    line-height: 1 !important;
+}
+
+.theme-bootstrap_darkroom .castor-icon,
+.theme-bootstrapdefault .castor-icon {
+    vertical-align: baseline !important;
+}
+
+/* -----------------------------------------------------------------------------
+   Menubar Button - Status indicator
+   Hidden by default, shown via JavaScript when casting
+   ----------------------------------------------------------------------------- */
+.castor-menubar-btn {
+    /* display is controlled by JavaScript - do not use !important here */
+    align-items: center;
+    cursor: pointer;
+    padding: 5px;
+    transition: opacity 0.2s ease;
+    vertical-align: middle;
+}
+
+.castor-menubar-btn:hover {
+    opacity: 0.8;
+}
+
+
+/* -----------------------------------------------------------------------------
+   Video Remote Control
+   ----------------------------------------------------------------------------- */
 #castor-remote {
-  position: relative;
-  max-width: 792px;
-  width: 100%;
-  padding: 15px;
-  box-sizing: border-box;
-  margin: 5px auto 15px;
-  background: rgba(0, 0, 0, 0.6);
-  border-radius: 10px;
+    position: relative !important;
+    max-width: 792px !important;
+    width: 100% !important;
+    padding: 15px !important;
+    box-sizing: border-box !important;
+    margin: 5px auto 15px !important;
+    background: rgba(0, 0, 0, 0.6) !important;
+    border-radius: 10px !important;
 }
 
 .castor-remote-title {
-  font-size: 1rem;
-  font-weight: 400;
-  color: #fff;
+    font-size: 1rem !important;
+    font-weight: 400 !important;
+    color: #fff !important;
+    margin-bottom: 5px !important;
 }
 
 .castor-remote-line {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  padding: 10px;
+    position: relative !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 15px !important;
+    padding: 10px !important;
 }
 
-/* Video bar */
-#castor-remote-bar-video input[id="castor-video-bar"] {
-  transform: scale(1,2);
+/* -----------------------------------------------------------------------------
+   Video Controls
+   ----------------------------------------------------------------------------- */
+#castor-video-btn-play,
+#castor-video-btn-pause {
+    width: 65px !important;
+    min-width: 65px !important;
+    height: 40px !important;
+    background-repeat: no-repeat !important;
+    background-size: contain !important;
+    cursor: pointer !important;
+    flex-shrink: 0 !important;
 }
 
 #castor-video-btn-play {
-  width: 65px;
-  min-width: 65px;
-  height: 40px;
-  background-repeat: no-repeat;
-  background-size: contain;
-  background-image: url('../images/play.png');
+    background-image: url('../images/play.png') !important;
 }
 
 #castor-video-btn-pause {
-  width: 65px;
-  min-width: 65px;
-  height: 40px;
-  background-repeat: no-repeat;
-  background-size: contain;
-  background-image: url('../images/pause.png');
+    background-image: url('../images/pause.png') !important;
 }
 
-/* Audio bar */
+/* -----------------------------------------------------------------------------
+   Audio Controls
+   ----------------------------------------------------------------------------- */
 .castor-remote-bar-audio {
-  width: 200px;
+    width: 200px !important;
+    flex-shrink: 0 !important;
 }
- 
+
+#castor-audio-btn-on,
+#castor-audio-btn-off {
+    width: 35px !important;
+    min-width: 35px !important;
+    height: 32px !important;
+    margin: 0 15px !important;
+    background-repeat: no-repeat !important;
+    background-size: contain !important;
+    cursor: pointer !important;
+    flex-shrink: 0 !important;
+}
+
 #castor-audio-btn-on {
-  width: 35px;
-  min-width: 35px;
-  margin: 0 15px;
-  height: 32px;
-  display: block;
-  background-repeat: no-repeat;
-  background-size: contain;
-  background-image: url('../images/audio_on.png');
+    display: block !important;
+    background-image: url('../images/audio_on.png') !important;
 }
 
 #castor-audio-btn-off {
-  width: 35px;
-  min-width: 35px;
-  margin: 0 15px;
-  height: 32px;
-  display: none;
-  background-repeat: no-repeat;
-  background-size: contain;
-  background-image: url('../images/audio_off.png');
+    display: none !important;
+    background-image: url('../images/audio_off.png') !important;
 }
 
-#castor-remote-bar-audio input[id="castor-audio-bar"] {
-  transform: scale(1,2);
-}
-
+/* -----------------------------------------------------------------------------
+   Range Sliders (Video & Audio bars)
+   ----------------------------------------------------------------------------- */
 #castor-video-bar,
 #castor-audio-bar {
-  width: 100%;
-  transform: scale(1,2);
+    width: 100% !important;
+    transform: scale(1, 2) !important;
+    cursor: pointer !important;
 }
 
-/* Button Cast 
-#castor-btn-cast {
-  cursor: pointer;
-  display: flex;
-  gap: 5px;
-  align-items: center;
-} */
-
-/* Button Cast */
-#castor-btn-cast {
-  cursor: pointer;
-  display: block;
-  align-self: center;
-  top: 2px;
-}
-
-#castor-btn-cast svg path {
-  fill: currentColor;
-}
-
-/* Alert Cast */
+/* -----------------------------------------------------------------------------
+   Alert Message
+   ----------------------------------------------------------------------------- */
 .castor-alert {
-  position: fixed; 
-  display: none; 
-  top: 40px; 
-  left: 50%; 
-  transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.8); 
-  color: #fff; 
-  padding: 10px 20px; 
-  border-radius: 5px;
-  z-index: 1000;
-  font-size: 14px;
+    position: fixed !important;
+    display: none;
+    top: 40px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    background: rgba(0, 0, 0, 0.8) !important;
+    color: #fff !important;
+    padding: 10px 20px !important;
+    border-radius: 5px !important;
+    z-index: 10000 !important;
+    font-size: 14px !important;
+    white-space: nowrap !important;
 }
 
-/* Fix audio & video bars for Bootstrap Material Theme */
+/* -----------------------------------------------------------------------------
+   Bootstrap Material Theme Compatibility
+   ----------------------------------------------------------------------------- */
 .castor-remote-bar-video:has(.bmd-form-group),
 .castor-remote-bar-video:has(.bmd-form-group) > .bmd-form-group,
 .castor-remote-bar-audio:has(.bmd-form-group) {
-  width: 100%;
+    width: 100% !important;
 }
 
 .castor-remote-bar-audio:has(.bmd-form-group) > .bmd-form-group {
-  width: 200px;
+    width: 200px !important;
 }
 
+/* -----------------------------------------------------------------------------
+   Theme-specific overrides - Elegant theme
+   ----------------------------------------------------------------------------- */
+.theme-elegant .castor-action-item,
+.theme-elegant .castor-btn {
+    font-size: 12px !important;
+}
 
+/* -----------------------------------------------------------------------------
+   Theme-specific overrides - Modus theme
+   ----------------------------------------------------------------------------- */
+.theme-modus .castor-btn {
+    padding: 2px 6px !important;
+}
+
+/* -----------------------------------------------------------------------------
+   Fallback Button (injected via JS when PLUGIN_PICTURE_ACTIONS not available)
+   ----------------------------------------------------------------------------- */
+#castor-btn-cast-fallback {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    cursor: pointer !important;
+    padding: 5px 10px !important;
+    margin: 0 5px !important;
+    color: inherit !important;
+    text-decoration: none !important;
+    border-radius: 3px !important;
+    transition: opacity 0.2s ease !important;
+}
+
+#castor-btn-cast-fallback:hover {
+    opacity: 0.8 !important;
+}

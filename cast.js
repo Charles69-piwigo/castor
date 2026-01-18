@@ -28,27 +28,41 @@ function changePage() {
   //*console.log('changement de page')
   //*console.log("page en cours  ", document.body.id);
 
+  // Récupération dynamique des éléments (au cas où ils n'étaient pas disponibles au chargement)
+  var btnEtat = btnCastEtat || document.getElementById("castor-btn-cast-etat");
+  var iconEtat = iconPathEtat || document.getElementById("castor-icon-cast-etat");
+
   if ((document.body.id === 'theCategoryPage') && (sessionStorage.getItem('castState') === "1")) {
      //*console.log("theCategoryPage - castState= 1");
      const message = (htmlLang === "fr") ? "Arrêter la diffusion" : "Stop casting";
-    btnCastEtat.setAttribute("title", message); // Modification du title
-    btnCastEtat.style.display = "inline-block" ; // ré-affiche l'icone d'état dans la barre de menu
-    iconPathEtat.style.fill = "#003cffff"; // Met l'icône d'état bleu
-    //iconPathEtat.style.fill = "#00ff37ff"; // Met l'icône d'état bleu
+    if (btnEtat) {
+      btnEtat.setAttribute("title", message); // Modification du title
+      btnEtat.style.display = "inline-block" ; // ré-affiche l'icone d'état dans la barre de menu
+    }
+    if (iconEtat) {
+      iconEtat.style.fill = "#003cffff"; // Met l'icône d'état bleu
+    }
     return ;
   }
 
 
   let storedUrl = sessionStorage.getItem("urlPrevMedia");
 
-  if (sessionStorage.getItem('castState') === "1") {  
+  if (sessionStorage.getItem('castState') === "1") {
     console.log("Session active détectée, mise à jour de l'icône. castState=1");
     const message = (htmlLang === "fr") ? "Arrêter la diffusion" : "Stop casting";
-    btnCast.setAttribute("title", message); // Modification du title
-    iconPath.style.fill = "#007bff"; // Met l'icône en bleu
-    btnCastEtat.style.display = "inline-block" ; // ré-affiche l'icone d'état dans la barre de menu
-    iconPathEtat.style.fill = "#003cffff"; // Met l'icône d'état bleu
-    //iconPathEtat.style.fill = "#00ff37ff"; // Met l'icône d'état bleu
+    if (btnCast) {
+      btnCast.setAttribute("title", message); // Modification du title
+    }
+    if (iconPath) {
+      iconPath.style.fill = "#007bff"; // Met l'icône en bleu
+    }
+    if (btnEtat) {
+      btnEtat.style.display = "inline-block" ; // ré-affiche l'icone d'état dans la barre de menu
+    }
+    if (iconEtat) {
+      iconEtat.style.fill = "#003cffff"; // Met l'icône d'état bleu
+    }
   }
 
   //console.log(storedUrl,jsUrl) ;
@@ -105,25 +119,41 @@ function toggleCast() {
 
 // fonction pour arrêter le cast par le bouton de la barre d'outil
 function stopCast() {
-    btnCastEtat.style.display = "none" ; // supprime l'icone d'état dans la barre de menu
-    stopApp(); /// castOff est appelé si ça réussit 
-
+    var btnEtat = btnCastEtat || document.getElementById("castor-btn-cast-etat");
+    if (btnEtat) {
+      btnEtat.style.display = "none" ; // supprime l'icone d'état dans la barre de menu
+    }
+    stopApp(); /// castOff est appelé si ça réussit
 }
 
 
 
 
-// ---------------------------------------------------------------------------------  
+// ---------------------------------------------------------------------------------
 function castOn() {  /// si launch réussi
   //*console.log('castOn');
   sessionStorage.setItem('castState', '1');
   sessionStorage.setItem("urlPrevMedia", jsUrl); // on stocke l'url
-  // Met à jour le texte du bouton
 
+  // Met à jour l'icône de la barre de navigation (picture page)
   const message = (htmlLang === "fr") ? "Arrêter la diffusion" : "Stop casting";
-  btnCast.setAttribute("title", message); // Modification du title
-  iconPath.style.fill = "#007bff"; // met en bleu l'icone de la barre de navigation
-  //btnCastEtat.style.display = "inline-block" ; // ré-affiche l'icone d'état dans la barre de menu
+  if (btnCast) {
+    btnCast.setAttribute("title", message);
+  }
+  if (iconPath) {
+    iconPath.style.fill = "#007bff"; // met en bleu l'icone de la barre de navigation
+  }
+
+  // Affiche l'icône d'état dans la barre de menu en bleu
+  var btnEtat = btnCastEtat || document.getElementById("castor-btn-cast-etat");
+  var iconEtat = iconPathEtat || document.getElementById("castor-icon-cast-etat");
+  if (btnEtat) {
+    btnEtat.style.display = "inline-block";
+    btnEtat.setAttribute("title", message);
+  }
+  if (iconEtat) {
+    iconEtat.style.fill = "#003cffff"; // bleu
+  }
   //*console.log('cast démarré + castState= ',sessionStorage.getItem('castState'));
 }
 
@@ -137,9 +167,17 @@ function castOff() {   /// si stopApp réeussi
   //initializeCastApi()
   // Met à jour le texte du bouton
   const message = (htmlLang === "fr") ? "Démarrer la diffusion" : "Start casting";
-  btnCast.setAttribute("title", message); // Modification du title
-  iconPath.style.fill = "#fff"; // blanc
-  btnCastEtat.style.display = "none"; // enlève l'icone d'état de la barre de menu
+  if (btnCast) {
+    btnCast.setAttribute("title", message); // Modification du title
+  }
+  if (iconPath) {
+    iconPath.style.fill = "#fff"; // blanc
+  }
+  // Cacher l'icone d'état de la barre de menu (récupération dynamique au cas où)
+  var btnEtat = btnCastEtat || document.getElementById("castor-btn-cast-etat");
+  if (btnEtat) {
+    btnEtat.style.display = "none";
+  }
 }
 
 // ===============================================================
@@ -190,17 +228,24 @@ function sessionListener(e) {
 
 // ====================================================================
 function loadMedia() {
-  
+
 if (!session) {
       //*console.log(">> Erreur - Pas de session définie.");
       return;
 }
-  
 
-  btnCastEtat.style.display = "inline-block" ; // ré-affiche l'icone d'état dans la barre de menu
-  const message = (htmlLang === "fr") ? "Arrêter la diffusion" : "Stop casting";
-  btnCastEtat.setAttribute("title", message); // Modification du title
-  iconPathEtat.style.fill = "#003cffff"; // met en bleu l'icone de la barre de menu
+  // Récupération dynamique des éléments
+  var btnEtat = btnCastEtat || document.getElementById("castor-btn-cast-etat");
+  var iconEtat = iconPathEtat || document.getElementById("castor-icon-cast-etat");
+
+  if (btnEtat) {
+    btnEtat.style.display = "inline-block" ; // ré-affiche l'icone d'état dans la barre de menu
+    const message = (htmlLang === "fr") ? "Arrêter la diffusion" : "Stop casting";
+    btnEtat.setAttribute("title", message); // Modification du title
+  }
+  if (iconEtat) {
+    iconEtat.style.fill = "#003cffff"; // met en bleu l'icone de la barre de menu
+  }
   
 
 if (jsMime === 'video/mp4') {    //// Cas des vidéos ************************************** VIDEO
