@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: castor
-Version: 3.6
+Version: auto
 Description: Castor - diffuser vos photos et vidéos sur une télé android ou via un chromecast
 Plugin URI: https://piwigo.org/ext/extension_view.php?eid=1001
 Author: Charles69
@@ -12,6 +12,9 @@ Author URI:
  // ============  VERSIONS =========================================================
  // historique des versions
  /*
+version 3.7 - 23/06/2026
+  conformation au standard get_original_url    
+ 
 version 3.6 - 18/01/2026
   refactoring CSS et templates pour compatibilité multi-thèmes
   ajout theme_config.php pour gestion centralisée des thèmes
@@ -273,9 +276,12 @@ function calc_url() {
 
     } else {
             // CAS DES VIDEOS - on passe la photo de pwg_representative et le plugin JS VIDEO fait le job !!
+            // Compatibilité pdp : laisser le plugin de protection réécrire l'URL si actif
+            // (redirige vers serve_original.php?id=X qui vérifie les droits avant de servir)
+            include_once(PHPWG_ROOT_PATH . 'include/derivative.inc.php');
+            $src_image = new SrcImage($picture['current']);
+            $url_original = trigger_change('get_original_url', $url_original, $src_image);
             // Assigner à Smarty
-            //$url_original = json_encode($url_original);
-            //echo 'vidéo' ;
             $template->assign('IMG_URL', $url_original); // Assignation dans le template
             $template->assign('MIME_TYPE', $mime_type);  // assignation dans le template
     }
