@@ -1,5 +1,5 @@
-// Vérification du chargement du script js
-console.log("cast.js chargé ");
+// Vérification du chargement du script js (décommenter la ligne suivante pour le diagnostic)
+//*console.log("cast.js chargé ");
 
 const htmlLang = document.documentElement.lang; // ex: "fr" ou "en"
 //*console.log("langue = " ,htmlLang);
@@ -77,7 +77,7 @@ function changePage() {
 
 
   if (sessionStorage.getItem('castState') === "1") {
-    console.log("Session active détectée, mise à jour de l'icône. castState=1");
+    //*console.log("Session active détectée, mise à jour de l'icône. castState=1");
     const message = tr("Arrêter la diffusion", "Stop casting");
     // récupération dynamique : le bouton de la picture page peut être injecté après le chargement du script
     var btnPicture = btnCast || document.getElementById("castor-btn-cast");
@@ -282,7 +282,6 @@ function loadMedia() {
   request.currentTime = 0;
 
   if (isVideo()) {    //// Cas des vidéos ************************************** VIDEO
-    console.log("castor : envoi de la vidéo", jsUrl);
     session.loadMedia(request, onVideoLoaded, onLoadError);
   } else {  // Cas des photos  ************************************************************* PHOTO
     currentMedia = null;
@@ -297,7 +296,6 @@ function loadMedia() {
 function watchSession(e) {
   e.addUpdateListener(function(isAlive) { if (!isAlive) { castOff(); } });
   e.addMediaListener(function(media) {
-    console.log("castor : média détecté sur la session", media.playerState);
     if (isVideo()) { onVideoLoaded(media); }
   });
 }
@@ -308,13 +306,11 @@ function onVideoLoaded(media) {
   if (currentMedia && currentMedia.mediaSessionId === media.mediaSessionId) { return; }
   currentMedia = media;
   isMuted = !!(media.volume && media.volume.muted);
-  console.log("castor : vidéo acceptée par le récepteur", jsUrl, media.playerState, media.idleReason);
   var lastState = null;
   media.addUpdateListener(function(isAlive) {
     var state = media.playerState + "/" + media.idleReason;
-    if (state !== lastState) {   // trace des changements d'état pour le diagnostic
+    if (state !== lastState) {   // on ne réagit qu'aux changements d'état
       lastState = state;
-      console.log("castor : état du récepteur =", state, "vivant=", isAlive);
       if (media.playerState === chrome.cast.media.PlayerState.IDLE
           && media.idleReason === chrome.cast.media.IdleReason.ERROR) {
         showCastMessage(tr("Le Chromecast n'a pas pu lire cette vidéo (erreur du récepteur).",

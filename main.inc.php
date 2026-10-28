@@ -12,7 +12,7 @@ Author URI:
  // ============  VERSIONS =========================================================
  // historique des versions
  /*
-version 3.7.1 - 28/10/2026
+version 3.7a - 28/10/2026
   vidéos : streamType, métadonnées (titre), autoplay et message d'erreur à l'envoi
   vidéos : détection de toute la famille video/* (webm, mov, m4v...), plus seulement video/mp4
   télécommande : son coupé/rétabli (icônes pilotées par classe CSS), saut dans la vidéo au relâchement de la barre, barre de position qui avance
@@ -22,6 +22,8 @@ version 3.7.1 - 28/10/2026
   messages utilisateur : aucun appareil trouvé, erreur d'initialisation, format non lu
   corrections : jsURL/jsUrl, gardes null (page sans média, session absente),
   écouteurs de la télécommande vidéo cumulés à chaque vidéo
+  aide Chrome : README.md (sélection de l'appareil dans la fenêtre multimédia de Chrome)
+  traces console de diagnostic retirées
 
 version 3.7 - 23/06/2026
   conformation au standard get_original_url    
