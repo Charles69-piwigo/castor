@@ -12,6 +12,17 @@ Author URI:
  // ============  VERSIONS =========================================================
  // historique des versions
  /*
+version 3.7.1 - 28/10/2026
+  vidéos : streamType, métadonnées (titre), autoplay et message d'erreur à l'envoi
+  vidéos : détection de toute la famille video/* (webm, mov, m4v...), plus seulement video/mp4
+  télécommande : son coupé/rétabli (icônes pilotées par classe CSS), saut dans la vidéo au relâchement de la barre, barre de position qui avance
+  cast.js et cast.css chargés avec ?v=<date du fichier> (cache navigateur périmé)
+  vidéos : URL rendue absolue (pdp renvoie une URL relative, illisible par la TV)
+  bouton cast : onclick au lieu de javascript:, callback API défini avant cast_sender.js
+  messages utilisateur : aucun appareil trouvé, erreur d'initialisation, format non lu
+  corrections : jsURL/jsUrl, gardes null (page sans média, session absente),
+  écouteurs de la télécommande vidéo cumulés à chaque vidéo
+
 version 3.7 - 23/06/2026
   conformation au standard get_original_url    
  
@@ -100,11 +111,24 @@ function cast_add_api()
     $needs_fallback = castor_needs_js_fallback($current_theme);
     $toolbar_selector = castor_get_toolbar_selector($current_theme);
 
+    // numéro de version = date du fichier : force les navigateurs à recharger cast.js / cast.css modifiés
+    $cast_ver_js  = @filemtime(CAST_PATH . 'cast.js');
+    $cast_ver_css = @filemtime(CAST_PATH . 'css/cast.css');
+
     // Base scripts and CSS
+    // le callback doit exister avant le chargement de cast_sender.js (cast.js le relaie ensuite)
     $scripts = '
+    <script>
+    window.castApiLoaded = undefined;
+    window["__onGCastApiAvailable"] = function(loaded, errorInfo) {
+        window.castApiLoaded = loaded;
+        window.castApiError = errorInfo;
+        if (typeof castorApiReady === "function") { castorApiReady(loaded, errorInfo); }
+    };
+    </script>
     <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js"></script>
-    <script src="plugins/castor/cast.js"></script>
-    <link rel="stylesheet" href="plugins/castor/css/cast.css" />
+    <script src="plugins/castor/cast.js?v=' . $cast_ver_js . '"></script>
+    <link rel="stylesheet" href="plugins/castor/css/cast.css?v=' . $cast_ver_css . '" />
     ';
 
     // Add JavaScript fallback for themes that don't support PLUGIN_PICTURE_ACTIONS
@@ -127,7 +151,8 @@ function cast_add_api()
             if (toolbar) {
                 var castButton = document.createElement("a");
                 castButton.id = "castor-btn-cast";
-                castButton.href = "javascript:toggleCast()";
+                castButton.href = "#";
+                castButton.addEventListener("click", function(e) { toggleCast(e); });
                 castButton.className = "castor-btn pwg-state-default pwg-button";
                 castButton.title = "Start Casting";
                 castButton.rel = "nofollow";
@@ -258,18 +283,18 @@ function calc_url() {
     //echo '  url orig= ' , $url_original ;
 
     // Récupération du Mime Type ==============
-    //echo gettype($url_picture) ;
-    $mime_type = mime_content_type($url_picture) ;
-    //echo 'mime type= ' , $mime_type;
+    $mime_type = castor_get_mime($url_picture);
+    $is_video = (strpos($mime_type, 'video/') === 0);
 
-    //if (substr($url_original,-3) !== 'mp4') {    // ce n'est pas une vidéo
-    if ($mime_type !== 'video/mp4') {    // ce n'est pas une vidéo
+    // Titre affiché sur la TV (JSON : sûr dans un bloc <script>)
+    $title = !empty($picture['current']['name']) ? $picture['current']['name'] : $picture['current']['file'];
+    $template->assign('MEDIA_TITLE', json_encode((string)$title, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP));
+
+    if (!$is_video) {    // ce n'est pas une vidéo
 
       $url_local = make_derivative_xl($url_original);
       $url_local = $url_base . $url_local ;
-      //echo 'url_local= ' , $url_local ;
             // Assigner à Smarty
-            //$url_original = json_encode($url_original);
             $template->assign('IMG_URL', $url_local); // Assignation dans le template
             $template->assign('MIME_TYPE', $mime_type);  // assignation dans le template
 
@@ -281,11 +306,49 @@ function calc_url() {
             include_once(PHPWG_ROOT_PATH . 'include/derivative.inc.php');
             $src_image = new SrcImage($picture['current']);
             $url_original = trigger_change('get_original_url', $url_original, $src_image);
+            // un plugin peut renvoyer une URL relative : la TV a besoin d'une URL absolue
+            $url_original = castor_absolute_url($url_original);
             // Assigner à Smarty
             $template->assign('IMG_URL', $url_original); // Assignation dans le template
             $template->assign('MIME_TYPE', $mime_type);  // assignation dans le template
     }
   }
+
+// Rend une URL absolue (http(s)://...) à partir d'une URL relative à la racine de Piwigo
+function castor_absolute_url($url)
+{
+    if (preg_match('#^https?://#i', $url)) {
+        return $url;
+    }
+    $root = get_absolute_root_url();                       // https://hote/chemin/ (avec / final)
+    if (strpos($url, '//') === 0) {                         // //hote/chemin
+        return parse_url($root, PHP_URL_SCHEME) . ':' . $url;
+    }
+    if (strpos($url, '/') === 0) {                          // /chemin depuis la racine du site
+        $p = parse_url($root);
+        return $p['scheme'] . '://' . $p['host'] . (isset($p['port']) ? ':' . $p['port'] : '') . $url;
+    }
+    return $root . preg_replace('#^\./#', '', $url);
+}
+
+// Mime type du fichier ; les conteneurs QuickTime / M4V sont envoyés comme video/mp4 (lus par Chromecast)
+function castor_get_mime($path)
+{
+    $mime = false;
+    if (function_exists('mime_content_type') && file_exists($path)) {
+        $mime = mime_content_type($path);
+    }
+    if (!$mime || $mime === 'application/octet-stream') {
+        $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        $map = array('mp4' => 'video/mp4', 'm4v' => 'video/mp4', 'mov' => 'video/mp4',
+                     'webm' => 'video/webm', 'png' => 'image/png', 'gif' => 'image/gif');
+        $mime = isset($map[$ext]) ? $map[$ext] : 'image/jpeg';
+    }
+    if ($mime === 'video/quicktime' || $mime === 'video/x-m4v') {
+        $mime = 'video/mp4';
+    }
+    return $mime;
+}
 
 //------------------------------------------------------------
 function make_derivative_xl($url_original)

@@ -1,5 +1,5 @@
 <li class="castor-action-item">
-    <a id="castor-btn-cast" href="javascript:toggleCast()" title="Start Casting"
+    <a id="castor-btn-cast" href="#" onclick="toggleCast(event)" title="Start Casting"
        class="castor-btn pwg-state-default pwg-button" rel="nofollow">
         <svg class="castor-icon" width="17" height="17" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
             <g fill="none" fill-rule="evenodd">

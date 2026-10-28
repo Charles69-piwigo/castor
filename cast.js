@@ -8,13 +8,43 @@ var session = null;
 var btnCast = document.getElementById("castor-btn-cast"),
     iconPath = document.getElementById("castor-icon-cast");
 var btnCastEtat = document.getElementById("castor-btn-cast-etat"),
-    iconPathEtat = document.getElementById("castor-icon-cast-etat");    
+    iconPathEtat = document.getElementById("castor-icon-cast-etat");
 
-var btn_video = document.getElementById('castor-remote');
-//if (btn_video) { 
-//  console.log('btn video ok');    
-//btn_video.style.display = 'none' ;
-//}
+var currentMedia = null;       // média vidéo en cours sur le récepteur
+var controlsBound = false;     // écouteurs de la télécommande posés une seule fois
+var apiInitialized = false;
+var isMuted = false;           // état du son sur la TV
+var seeking = false;           // l'utilisateur déplace la barre de position
+var progressTimer = null;
+
+// message selon la langue
+function tr(fr, en) { return (htmlLang === "fr") ? fr : en; }
+
+// la page contient-elle une photo ou une vidéo à caster ?
+function hasMedia() {
+  return typeof jsUrl !== "undefined" && typeof jsMime !== "undefined" && !!jsUrl && !!jsMime;
+}
+
+function isVideo() {
+  return hasMedia() && jsMime.indexOf('video/') === 0;
+}
+
+// message utilisateur (réutilise le bandeau castor-alert)
+var alertTimer = null;
+function showCastMessage(msg) {
+  console.warn("castor : " + msg);
+  var box = document.getElementById("castor-alert");
+  if (!box) {
+    box = document.createElement("div");
+    box.id = "castor-alert";
+    box.className = "castor-alert";
+    document.body.appendChild(box);
+  }
+  box.textContent = msg;
+  box.style.display = "block";
+  clearTimeout(alertTimer);
+  alertTimer = setTimeout(function() { box.style.display = "none"; }, 5000);
+}
 
 //*console.log('castState original',sessionStorage.getItem('castState'));
 
@@ -34,7 +64,7 @@ function changePage() {
 
   if ((document.body.id === 'theCategoryPage') && (sessionStorage.getItem('castState') === "1")) {
      //*console.log("theCategoryPage - castState= 1");
-     const message = (htmlLang === "fr") ? "Arrêter la diffusion" : "Stop casting";
+     const message = tr("Arrêter la diffusion", "Stop casting");
     if (btnEtat) {
       btnEtat.setAttribute("title", message); // Modification du title
       btnEtat.style.display = "inline-block" ; // ré-affiche l'icone d'état dans la barre de menu
@@ -46,16 +76,17 @@ function changePage() {
   }
 
 
-  let storedUrl = sessionStorage.getItem("urlPrevMedia");
-
   if (sessionStorage.getItem('castState') === "1") {
     console.log("Session active détectée, mise à jour de l'icône. castState=1");
-    const message = (htmlLang === "fr") ? "Arrêter la diffusion" : "Stop casting";
-    if (btnCast) {
-      btnCast.setAttribute("title", message); // Modification du title
+    const message = tr("Arrêter la diffusion", "Stop casting");
+    // récupération dynamique : le bouton de la picture page peut être injecté après le chargement du script
+    var btnPicture = btnCast || document.getElementById("castor-btn-cast");
+    var iconPicture = iconPath || document.getElementById("castor-icon-cast");
+    if (btnPicture) {
+      btnPicture.setAttribute("title", message); // Modification du title
     }
-    if (iconPath) {
-      iconPath.style.fill = "#007bff"; // Met l'icône en bleu
+    if (iconPicture) {
+      iconPicture.style.fill = "#007bff"; // Met l'icône en bleu
     }
     if (btnEtat) {
       btnEtat.style.display = "inline-block" ; // ré-affiche l'icone d'état dans la barre de menu
@@ -65,57 +96,52 @@ function changePage() {
     }
   }
 
-  //console.log(storedUrl,jsUrl) ;
-  
-  if ( storedUrl === window.jsURL )  {
+  if (!hasMedia()) { return; }  // page sans photo ni vidéo
+
+  let storedUrl = sessionStorage.getItem("urlPrevMedia");
+
+  if ( storedUrl === window.jsUrl )  {
       //*console.log("même image - castState =  ",sessionStorage.getItem('castState'));
 
       return ;
 
   } else {
       //*console.log("changement de page + castState= ", sessionStorage.getItem('castState'));
-      //*console.log('nouvelle url = ', window.jsUrl);
-      sessionStorage.setItem('urlPrevMedia', window.jsURL) ;
-      
+      sessionStorage.setItem('urlPrevMedia', window.jsUrl) ;
+
       if (sessionStorage.getItem('castState') === "1") {  // si on est en train de caster
-        ////*console.log('avant d\'appeler loadMedia, session = ',session.Id);
-        if (session) {  // si la session est définie  
+        if (session) {  // si la session est définie
           castOn();
-          loadMedia(jsUrl);
+          loadMedia();
         }else{
           //*console.log("Session non définie , impossible de caster l'image ")
         }
       } else {
         //*console.log("Cast non actif");
       }
-  }    
+  }
 }
 
 // CAST  =========================================================
 
   // Fonction inverseur pour lancer ou arrêter le cast *** click sur le bouton de CAST de picture page
 
-function toggleCast() {
+function toggleCast(event) {
   'use strict';
-  //*console.log('toggle + castState= ',sessionStorage.getItem('castState'));
+  if (event && event.preventDefault) { event.preventDefault(); }  // href="#"
 
   let castEtat = sessionStorage.getItem('castState');
   if (castEtat === "1"  ) {
       // Terminer la session active
-      if ((session) != null) {
-        stopApp(); /// castOff est appelé si ça réussit 
-      }   
+      stopApp(); /// castOff est appelé si ça réussit
   } else {
-      // pas d'image sur la page 
-      if (typeof jsUrl === "undefined" || typeof jsMime === "undefined" || !jsUrl || !jsMime) {
-        //*console.log("toggle > Aucun média sur cette page");
-        //showCastAlert(); // Affiche le message
-        } else {
-                   
-          launchApp();    // castOn est appelé si ça réussit
-        } 
-    }
+      if (!hasMedia()) {
+        showCastMessage(tr("Ouvrir une photo ou une vidéo avant de caster.", "Open a photo or a video before casting."));
+      } else {
+        launchApp();    // castOn est appelé si ça réussit
+      }
   }
+}
 
 // fonction pour arrêter le cast par le bouton de la barre d'outil
 function stopCast() {
@@ -136,12 +162,14 @@ function castOn() {  /// si launch réussi
   sessionStorage.setItem("urlPrevMedia", jsUrl); // on stocke l'url
 
   // Met à jour l'icône de la barre de navigation (picture page)
-  const message = (htmlLang === "fr") ? "Arrêter la diffusion" : "Stop casting";
-  if (btnCast) {
-    btnCast.setAttribute("title", message);
+  const message = tr("Arrêter la diffusion", "Stop casting");
+  var btnPicture = btnCast || document.getElementById("castor-btn-cast");
+  var iconPicture = iconPath || document.getElementById("castor-icon-cast");
+  if (btnPicture) {
+    btnPicture.setAttribute("title", message);
   }
-  if (iconPath) {
-    iconPath.style.fill = "#007bff"; // met en bleu l'icone de la barre de navigation
+  if (iconPicture) {
+    iconPicture.style.fill = "#007bff"; // met en bleu l'icone de la barre de navigation
   }
 
   // Affiche l'icône d'état dans la barre de menu en bleu
@@ -160,18 +188,22 @@ function castOn() {  /// si launch réussi
 // --------------------------------------------------------------------------------
 function castOff() {   /// si stopApp réeussi
   //*console.log('castOff');
-  ////*console.log('stop ', session.media.length);
   session = null ;
+  currentMedia = null ;
+  clearInterval(progressTimer);
+  var remote = document.getElementById('castor-remote');
+  if (remote) { remote.style.display = 'none'; }
   sessionStorage.setItem('castState', '0');
   //*console.log('cast arrêté + castState= ',sessionStorage.getItem('castState'));
-  //initializeCastApi()
   // Met à jour le texte du bouton
-  const message = (htmlLang === "fr") ? "Démarrer la diffusion" : "Start casting";
-  if (btnCast) {
-    btnCast.setAttribute("title", message); // Modification du title
+  const message = tr("Démarrer la diffusion", "Start casting");
+  var btnPicture = btnCast || document.getElementById("castor-btn-cast");
+  var iconPicture = iconPath || document.getElementById("castor-icon-cast");
+  if (btnPicture) {
+    btnPicture.setAttribute("title", message); // Modification du title
   }
-  if (iconPath) {
-    iconPath.style.fill = "#fff"; // blanc
+  if (iconPicture) {
+    iconPicture.style.fill = "#fff"; // blanc
   }
   // Cacher l'icone d'état de la barre de menu (récupération dynamique au cas où)
   var btnEtat = btnCastEtat || document.getElementById("castor-btn-cast-etat");
@@ -182,14 +214,16 @@ function castOff() {   /// si stopApp réeussi
 
 // ===============================================================
 
-// Wait for the API to complete loading
-window['__onGCastApiAvailable'] = function(loaded, errorInfo) {
+// Le callback __onGCastApiAvailable est défini dans la page avant cast_sender.js (main.inc.php) :
+// il appelle castorApiReady. Si l'API était déjà prête avant ce script, on rattrape ici.
+function castorApiReady(loaded, errorInfo) {
   if (loaded) {
     initializeCastApi();
   } else {
-    log(errorInfo);
+    console.warn("castor : API Cast non chargée", errorInfo);
   }
 }
+if (window.castApiLoaded !== undefined) { castorApiReady(window.castApiLoaded, window.castApiError); }
 
 // ========================================================================
 
@@ -202,37 +236,28 @@ function initializeCastApi() {
           receiverListener,
           autoJoinPolicy);
   chrome.cast.initialize(apiConfig, onInitSuccess, onInitError);
-  let savedSessionId = sessionStorage.getItem('sessionId');
-  //*console.log("Récupération de la session Chromecast :", savedSessionId);
-
 }
 
 // ============================================================
 function sessionListener(e) {
   session = e;
-  ////*console.log('Nouvelle session');
-  //if (session.media.length != 0) {
   if (session !== undefined ) {
-          ////*console.log('Nouvelle sessionTrouvé ' + session.media.length + ' session.');
           sessionStorage.setItem('sessionId', e.sessionId);
-          //*console.log('init session ' + e.sessionId);
+          // session fermée côté TV (télécommande, autre appareil) : on remet l'état à zéro
+          watchSession(e);
           // Vérifier si le cast était actif avant le changement de page
-            if (sessionStorage.getItem('castState') === "1") {
-              //*console.log("Session récupérée, envoi de la nouvelle image :", jsUrl);
-              loadMedia(jsUrl);
-            }
-  } else  {
-    //*console.log('init zéro session ' + e.sessionId);
+          if (sessionStorage.getItem('castState') === "1" && hasMedia()) {
+            loadMedia();
+          }
   }
 }
 
 // ====================================================================
 function loadMedia() {
 
-if (!session) {
-      //*console.log(">> Erreur - Pas de session définie.");
-      return;
-}
+  if (!session || !hasMedia()) {
+    return;
+  }
 
   // Récupération dynamique des éléments
   var btnEtat = btnCastEtat || document.getElementById("castor-btn-cast-etat");
@@ -240,64 +265,104 @@ if (!session) {
 
   if (btnEtat) {
     btnEtat.style.display = "inline-block" ; // ré-affiche l'icone d'état dans la barre de menu
-    const message = (htmlLang === "fr") ? "Arrêter la diffusion" : "Stop casting";
-    btnEtat.setAttribute("title", message); // Modification du title
+    btnEtat.setAttribute("title", tr("Arrêter la diffusion", "Stop casting"));
   }
   if (iconEtat) {
     iconEtat.style.fill = "#003cffff"; // met en bleu l'icone de la barre de menu
   }
-  
 
-if (jsMime === 'video/mp4') {    //// Cas des vidéos ************************************** VIDEO
-  //*console.log('jsMime = ' ,jsMime) ;
-  
-  var videoSrc = jsUrl ;
-  var mediaInfo = new chrome.cast.media.MediaInfo(videoSrc);
-  mediaInfo.contentType = jsMime; 
+  // Le récepteur par défaut affiche "Default Media Receiver" tant qu'il n'a ni type de flux ni titre
+  var mediaInfo = new chrome.cast.media.MediaInfo(jsUrl, jsMime);
+  mediaInfo.streamType = chrome.cast.media.StreamType.BUFFERED;
+  mediaInfo.metadata = new chrome.cast.media.GenericMediaMetadata();
+  mediaInfo.metadata.title = (typeof jsTitle === "string") ? jsTitle : "";
 
   var request = new chrome.cast.media.LoadRequest(mediaInfo);
+  request.autoplay = true;
+  request.currentTime = 0;
 
-  session.loadMedia(request, (media) => {
-    //*console.log("✅ Vidéo envoyée avec succès.");
-    session.media[0] = media; // Assigner correctement le média
-    waitForMediaUpdate(); // Attendre que le média soit bien mis à jour & activation de la télécommande
-  }, onLoadError);
-
-} else {  // Cas des photos  ************************************************************* PHOTO
-    
-  btn_video.style.display = 'none'; // on n'affiche plus la télécommande
-
-  var videoSrc = jsUrl ;
-  var mediaInfo = new chrome.cast.media.MediaInfo(videoSrc);
-  mediaInfo.contentType = jsMime; // 'image/jpeg';
-
-  var request = new chrome.cast.media.LoadRequest(mediaInfo);
-  //request.autoplay = true;
-
-  session.loadMedia(request, onLoadSuccess, onLoadError);
-}
-
+  if (isVideo()) {    //// Cas des vidéos ************************************** VIDEO
+    console.log("castor : envoi de la vidéo", jsUrl);
+    session.loadMedia(request, onVideoLoaded, onLoadError);
+  } else {  // Cas des photos  ************************************************************* PHOTO
+    currentMedia = null;
+    var remote = document.getElementById('castor-remote');
+    if (remote) { remote.style.display = 'none'; } // on n'affiche plus la télécommande
+    session.loadMedia(request, onLoadSuccess, onLoadError);
+  }
 }
 // =================================================================
 
-/// Fonction pour attendre que la vidéo soit envoyée avant d'activer la télécommande
-function waitForMediaUpdate() {
-  if (!session) return;
-  
-  //*console.log("⏳ Attente de la mise à jour du media...");
+// Surveille la session : fermeture côté TV, et média créé (filet de sécurité si le retour de loadMedia n'arrive pas)
+function watchSession(e) {
+  e.addUpdateListener(function(isAlive) { if (!isAlive) { castOff(); } });
+  e.addMediaListener(function(media) {
+    console.log("castor : média détecté sur la session", media.playerState);
+    if (isVideo()) { onVideoLoaded(media); }
+  });
+}
 
-  // Attendre 1 seconde et récupérer les infos du média
-  setTimeout(() => {
-    if (session.media && session.media.length > 0 && session.media[0].media) {
-        //*console.log("✅ Média mis à jour :", session.media[0]);
-        btn_video.style.display = 'block';
-        videoPlay() ;
-        audioOn() ;
-        setupControls(); // Active les boutons après confirmation
-    } else {
-        //*console.log("❌ Toujours aucun média détecté après 1s !");
+// Vidéo acceptée par le récepteur : activation de la télécommande
+function onVideoLoaded(media) {
+  // appelée par le retour de loadMedia ET par addMediaListener : on n'active la télécommande qu'une fois
+  if (currentMedia && currentMedia.mediaSessionId === media.mediaSessionId) { return; }
+  currentMedia = media;
+  isMuted = !!(media.volume && media.volume.muted);
+  console.log("castor : vidéo acceptée par le récepteur", jsUrl, media.playerState, media.idleReason);
+  var lastState = null;
+  media.addUpdateListener(function(isAlive) {
+    var state = media.playerState + "/" + media.idleReason;
+    if (state !== lastState) {   // trace des changements d'état pour le diagnostic
+      lastState = state;
+      console.log("castor : état du récepteur =", state, "vivant=", isAlive);
+      if (media.playerState === chrome.cast.media.PlayerState.IDLE
+          && media.idleReason === chrome.cast.media.IdleReason.ERROR) {
+        showCastMessage(tr("Le Chromecast n'a pas pu lire cette vidéo (erreur du récepteur).",
+                           "The Chromecast could not play this video (receiver error)."));
+      }
     }
-  }, 1000); // Attente de 1 seconde
+    syncRemote();
+  });
+  clearInterval(progressTimer);
+  progressTimer = setInterval(syncProgress, 1000);
+  var remote = document.getElementById('castor-remote');
+  if (remote) { remote.style.display = 'block'; }
+  setupControls();
+  syncRemote();
+}
+
+function getMedia() {
+  if (currentMedia) return currentMedia;
+  return (session && session.media && session.media[0]) ? session.media[0] : null;
+}
+
+// Aligne les boutons de la télécommande sur l'état réel du récepteur
+function syncRemote() {
+  var media = getMedia();
+  if (!media) return;
+  var show = function(id, on) {
+    var el = document.getElementById(id);
+    if (el) { el.style.display = on ? 'block' : 'none'; }
+  };
+  var playing = (media.playerState === chrome.cast.media.PlayerState.PLAYING
+              || media.playerState === chrome.cast.media.PlayerState.BUFFERING);
+  show('castor-video-btn-play', !playing);
+  show('castor-video-btn-pause', playing);
+  // l'état muet suit le récepteur quand il le communique (le CSS impose le display des boutons son : on passe par une classe)
+  if (media.volume && typeof media.volume.muted === "boolean") { isMuted = media.volume.muted; }
+  var remote = document.getElementById('castor-remote');
+  if (remote) { remote.classList.toggle('castor-muted', isMuted); }
+  syncProgress();
+}
+
+// Position de lecture sur la barre (sauf pendant que l'utilisateur la déplace)
+function syncProgress() {
+  var media = getMedia();
+  var bar = document.getElementById('castor-video-bar');
+  if (!media || !bar || seeking) return;
+  var duration = media.media && media.media.duration;
+  if (!duration) return;
+  bar.value = Math.min(100, media.getEstimatedTime() * 100 / duration);
 }
 
 
@@ -312,29 +377,39 @@ function receiverListener(e) {
 }
 
 function onInitSuccess() {
-  //*console.log("Initialisation API succès");
+  apiInitialized = true;
 }
 
-function onInitError() {
-  //*console.log("Initialisation API échouée");
+function onInitError(err) {
+  apiInitialized = false;
+  console.warn("castor : initialisation API échouée", err);
 }
 
 function launchApp() {
-  //*console.log("Sélection du Chromecast > lauchApp ");
+  if (typeof chrome === "undefined" || !chrome.cast || !apiInitialized) {
+    showCastMessage(tr("Cast indisponible : utilisez Google Chrome sur le même réseau que la TV.",
+                       "Cast unavailable: use Google Chrome on the same network as the TV."));
+    return;
+  }
   chrome.cast.requestSession(onRequestSessionSuccess, onLaunchError);
 }
 
-function onLaunchError() {
-  //*console.log("Erreur connexion au Chromecast.");
+function onLaunchError(err) {
   sessionStorage.setItem("castState", "0");
+  var code = err && err.code;
+  if (code === "cancel") { return; }  // l'utilisateur a fermé la fenêtre de choix
+  if (code === "receiver_unavailable") {
+    showCastMessage(tr("Aucun appareil Cast trouvé sur le réseau.", "No Cast device found on the network."));
+  } else {
+    showCastMessage(tr("Erreur de connexion au Chromecast", "Chromecast connection error") + (code ? " (" + code + ")" : ""));
+  }
 }
 
 function onRequestSessionSuccess(e) {
-  //*console.log("ReqSSucces session créée:  " + e.sessionId);
   castOn();  // mise à jour bouton et variables
   session = e;
   sessionStorage.setItem('sessionId', e.sessionId); // Enregistrement ici
-  //*console.log("Session Chromecast enregistrée :", e.sessionId);
+  watchSession(e);
   loadMedia();
 }
 
@@ -342,138 +417,94 @@ function onLoadSuccess() {
   //*console.log('Image envoyée avec succès.');
 }
 
-function onLoadError() {
-  //*console.log('Image/Vidéo echec de l\'envoi.');
+function onLoadError(err) {
+  var code = err && err.code;
+  var detail = (err && err.description) ? err.description : "";
+  showCastMessage(tr("Le Chromecast n'a pas pu lire ce média", "The Chromecast could not play this media")
+                  + (code ? " (" + code + (detail ? " : " + detail : "") + ")" : ""));
 }
 
 function stopApp() {
+  if (!session) {  // session perdue (changement de page...) : on remet simplement l'état à zéro
+    castOff();
+    return;
+  }
   session.stop(onStopAppSuccess, onStopAppError);
-  
 }
 
 function onStopAppSuccess() {
-  //*console.log('Successfully stopped app.');
   castOff() ;
-  
 }
 
 function onStopAppError() {
-  //*console.log('Error stopping app.');
+  castOff();  // la session n'existe plus côté TV : on remet l'état à zéro
 }
-    
-//***************************************************************************** */    
+
+//***************************************************************************** */
 
 function setupControls() {
-  document.getElementById("castor-video-btn-play").addEventListener("click", togglePlayPause);
-  document.getElementById("castor-video-btn-pause").addEventListener("click", togglePlayPause);
-  document.getElementById("castor-video-bar").addEventListener("input", seekVideo);
-  document.getElementById("castor-audio-btn-on").addEventListener("click", toggleMute);
-  document.getElementById("castor-audio-btn-off").addEventListener("click", toggleMute);
-  document.getElementById("castor-audio-bar").addEventListener("input", setVolume);
+  if (controlsBound) return;   // éviter d'empiler les écouteurs à chaque vidéo
+  var bind = function(id, evt, fn) {
+    var el = document.getElementById(id);
+    if (el) { el.addEventListener(evt, fn); }
+  };
+  bind("castor-video-btn-play", "click", togglePlayPause);
+  bind("castor-video-btn-pause", "click", togglePlayPause);
+  bind("castor-video-bar", "input", function() { seeking = true; });  // pas de mise à jour auto pendant le déplacement
+  bind("castor-video-bar", "change", seekVideo);                        // un seul saut, au relâchement
+  bind("castor-audio-btn-on", "click", toggleMute);
+  bind("castor-audio-btn-off", "click", toggleMute);
+  bind("castor-audio-bar", "input", setVolume);
+  controlsBound = true;
 }
 
 // 1️⃣ Play/Pause
 function togglePlayPause() {
-
-//*console.log("toggle");
-
-  if (!session || !session.media[0]) return;
-  let media = session.media[0];
+  let media = getMedia();
+  if (!media) return;
 
   if (media.playerState === chrome.cast.media.PlayerState.PLAYING) {
-      //media.pause(null, console.log("Pause"), console.error);
-      media.pause();
-      document.getElementById('castor-video-btn-play').style.display = 'block';
-      document.getElementById('castor-video-btn-pause').style.display = 'none';
-
+      media.pause(null, syncRemote, onLoadError);
   } else {
-      //media.play(null, console.log("Play"), console.error);
-      media.play();
-      document.getElementById('castor-video-btn-play').style.display = 'none';
-      document.getElementById('castor-video-btn-pause').style.display = 'block';
-
+      media.play(null, syncRemote, onLoadError);
   }
 }
 
 // 2️⃣ Changer la position
 function seekVideo(event) {
-  if (!session || !session.media[0]) return;
-  let media = session.media[0];
-  let newTime = event.target.value * media.media.duration / 100;
-
+  let media = getMedia();
+  if (!media) { seeking = false; return; }
+  let duration = media.media && media.media.duration;
+  if (!duration) {
+    seeking = false;
+    showCastMessage(tr("Durée de la vidéo inconnue : déplacement impossible.", "Video duration unknown: cannot seek."));
+    return;
+  }
   let request = new chrome.cast.media.SeekRequest();
-  request.currentTime = newTime;
-  //media.seek(request, console.log("Seek"), console.error);
-  media.seek(request);
+  request.currentTime = event.target.value * duration / 100;
+  media.seek(request, function() { seeking = false; syncRemote(); }, function(err) { seeking = false; onLoadError(err); });
 }
 
 // 3️⃣ Mute/Unmute
 function toggleMute() {
-  if (!session || !session.media[0]) return;
-  let media = session.media[0];
+  let media = getMedia();
+  if (!media) return;
 
   let volumeRequest = new chrome.cast.media.VolumeRequest();
   volumeRequest.volume = new chrome.cast.Volume();
-  //*console.log(volumeRequest);
-  if (media.volume.muted) {
-    //volumeRequest.volume.muted = false;
-    volumeRequest.volume.muted = !media.volume.muted;
-    //media.setVolume(volumeRequest, console.log("Unmute"), console.error);
-    media.setVolume(volumeRequest);
-    document.getElementById('castor-audio-btn-on').style.display = 'none';
-    document.getElementById('castor-audio-btn-off').style.display = 'block';
-  } else {
-    //volumeRequest.volume.muted = true;
-    volumeRequest.volume.muted = !media.volume.muted;
-    //media.setVolume(volumeRequest, console.log("Mute"), console.error);
-    media.setVolume(volumeRequest);
-    document.getElementById('castor-audio-btn-on').style.display = 'block';
-    document.getElementById('castor-audio-btn-off').style.display = 'none';
-  }
-
+  var wantMuted = !isMuted;
+  volumeRequest.volume.muted = wantMuted;
+  media.setVolume(volumeRequest, function() { isMuted = wantMuted; syncRemote(); }, onLoadError);
 }
 
 // 4️⃣ Changer le volume
 function setVolume(event) {
-  if (!session || !session.media[0]) return;
-  let media = session.media[0];
+  let media = getMedia();
+  if (!media) return;
 
   let volumeRequest = new chrome.cast.media.VolumeRequest();
   volumeRequest.volume = new chrome.cast.Volume();
   volumeRequest.volume.level = parseFloat(event.target.value);
 
-  //media.setVolume(volumeRequest, console.log("Volume changé"), console.error);
   media.setVolume(volumeRequest);
 }
-
-// -----------------------------------------------------------------
-
-// Play initialisation
-function videoPlay() {
-  if (!session || !session.media[0]) return;
-  let media = session.media[0];
-
-      //media.play(null, console.log("init Play"), console.error);
-      media.play();
-      document.getElementById('castor-video-btn-play').style.display = 'none';
-      document.getElementById('castor-video-btn-pause').style.display = 'block';
-}
-
-// audioOn initialisation
-function audioOn() {
-  if (!session || !session.media[0]) return;
-  let media = session.media[0];
-
-  let volumeRequest = new chrome.cast.media.VolumeRequest();
-  volumeRequest.volume = new chrome.cast.Volume();
-  //*console.log(volumeRequest);
-
-    volumeRequest.volume.muted = false;
-    //media.setVolume(volumeRequest, console.log("init Audio On"), console.error);
-    media.setVolume(volumeRequest);
-    document.getElementById('castor-audio-btn-on').style.display = 'none';
-    document.getElementById('castor-audio-btn-off').style.display = 'block';
-
-}
-
-   

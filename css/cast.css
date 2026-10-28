@@ -176,6 +176,15 @@
     background-image: url('../images/audio_off.png') !important;
 }
 
+/* son coupé : la classe est posée par cast.js (les display ci-dessus sont !important) */
+#castor-remote.castor-muted #castor-audio-btn-on {
+    display: none !important;
+}
+
+#castor-remote.castor-muted #castor-audio-btn-off {
+    display: block !important;
+}
+
 /* -----------------------------------------------------------------------------
    Range Sliders (Video & Audio bars)
    ----------------------------------------------------------------------------- */
